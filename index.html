@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector Parkour 2D</title>
+  <meta name="description" content="Game parkour 2D berbasis vector dengan kontrol lompat dan sistem skor.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏃</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --bg-body: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --color-primary: #4f46e5;
+      --color-primary-hover: #4338ca;
+      --color-primary-light: #eef2ff;
+      --color-accent: #06b6d4;
+      --color-accent-light: #ecfeff;
+      --color-danger: #ef4444;
+      --color-danger-light: #fef2f2;
+      --color-success: #10b981;
+      --color-success-light: #ecfdf5;
+      --color-warning: #f59e0b;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html.dark {
+      --bg-body: #0b0f19;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1f2937;
+      --border-color: #374151;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --color-primary: #6366f1;
+      --color-primary-hover: #818cf8;
+      --color-primary-light: #1e1b4b;
+      --color-accent: #22d3ee;
+      --color-accent-light: #164e63;
+      --color-danger: #f87171;
+      --color-danger-light: #450a0a;
+      --color-success: #34d399;
+      --color-success-light: #064e3b;
+      --color-warning: #fbbf24;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    header {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      font-size: 1.75rem;
+    }
+
+    .logo-text {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
+    }
+
+    .logo-subtitle {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: none;
+    }
+
+    @media (min-width: 480px) {
+      .logo-subtitle {
+        display: block;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      min-height: 44px;
+    }
+
+    .btn:hover {
+      background-color: var(--bg-surface-elevated);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    .btn-icon {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: var(--radius-md);
+      font-size: 1.25rem;
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .game-wrapper {
+      width: 100%;
+      max-width: 900px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      box-shadow: var(--shadow-md);
+      transition: var(--transition);
+    }
+
+    .game-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .game-title {
+      font-size: 1.125rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
+    .game-stats {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      background-color: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-main);
+      font-variant-numeric: tabular-nums;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      background-color: #0f172a;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      image-rendering: pixelated;
+      touch-action: manipulation;
+    }
+
+    .controls-hint {
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .controls-hint kbd {
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface-elevated);
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--text-main);
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+    }
+
+    #toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 0.875rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #ffffff;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: auto;
+      max-width: 360px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast-info { background-color: var(--color-primary); }
+    .toast-success { background-color: var(--color-success); }
+    .toast-error { background-color: var(--color-danger); }
+    .toast-warning { background-color: var(--color-warning); color: #1f2937; }
+
+    @media (max-width: 640px) {
+      header {
+        padding: 0.875rem 1rem;
+      }
+
+      main {
+        padding: 1rem;
+      }
+
+      .game-wrapper {
+        padding: 0.75rem;
+      }
+
+      .game-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span class="logo-icon" aria-hidden="true">🏃</span>
+      <div>
+        <div class="logo-text">Vector Parkour 2D</div>
+        <div class="logo-subtitle">Lompat, lari, dan kalahkan skormu</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-icon" id="theme-toggle" aria-label="Toggle tema gelap/terang" title="Toggle tema">🌓</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <div class="game-wrapper">
+      <div class="game-header">
+        <div class="game-title">🎮 Vector Parkour</div>
+        <div class="game-stats">
+          <div class="stat-pill" id="score-display">Skor: 0</div>
+          <div class="stat-pill" id="highscore-display">Terbaik: 0</div>
+        </div>
+      </div>
+      <canvas id="gameCanvas" width="900" height="506" aria-label="Area game Vector Parkour 2D"></canvas>
+      <div class="controls-hint">
+        <span><kbd>Space</kbd> / <kbd>↑</kbd> Lompat</span>
+        <span><kbd>↓</kbd> Jatuh Cepat</span>
+        <span>Double Jump tersedia di udara</span>
+        <span>Sentuh layar untuk lompat</span>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <footer>
+    <p>&copy; <span id="year"></span> Vector Parkour 2D. Dibuat dengan Vanilla HTML, CSS, Canvas, dan JavaScript.</p>
+  </footer>
+
+  <script>
+    'use strict';
+
+    const App = {
+      state: {
+        theme: localStorage.getItem('vectorparkour_theme') || 'light',
+        score: 0,
+        highScore: 0,
+        gameRunning: false,
+        gameOver: false
+      },
+
+      dom: {},
+
+      init() {
+        this.cacheDOM();
+        this.applyTheme();
+        this.bindEvents();
+        this.updateYear();
+        this.loadHighScore();
+        this.initGame();
+      },
+
+      cacheDOM() {
+        this.dom.html = document.documentElement;
+        this.dom.toastContainer = document.getElementById('toast-container');
+        this.dom.yearSpan = document.getElementById('year');
+        this.dom.themeToggle = document.getElementById('theme-toggle');
+        this.dom.canvas = document.getElementById('gameCanvas');
+        this.dom.scoreDisplay = document.getElementById('score-display');
+        this.dom.highScoreDisplay = document.getElementById('highscore-display');
+      },
+
+      updateYear() {
+        if (this.dom.yearSpan) {
+          this.dom.yearSpan.textContent = new Date().getFullYear();
+        }
+      },
+
+      applyTheme() {
+        if (this.state.theme === 'dark') {
+          this.dom.html.classList.add('dark');
+        } else {
+          this.dom.html.classList.remove('dark');
+        }
+        localStorage.setItem('vectorparkour_theme', this.state.theme);
+      },
+
+      toggleTheme() {
+        this.state.theme = this.state.theme === 'light' ? 'dark' : 'light';
+        this.applyTheme();
+        this.showToast('Tema diubah ke ' + (this.state.theme === 'dark' ? 'gelap' : 'terang'), 'info');
+      },
+
+      showToast(message, type) {
+        type = type || 'info';
+        const toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        toast.textContent = message;
+        this.dom.toastContainer.appendChild(toast);
+        setTimeout(function() { toast.classList.add('show'); }, 10);
+        var self = this;
+        setTimeout(function() {
+          toast.classList.remove('show');
+          setTimeout(function() { toast.remove(); }, 300);
+        }, 3000);
+      },
+
+      loadHighScore() {
+        try {
+          const raw = localStorage.getItem('vectorparkour_highscore');
+          if (raw) {
+            this.state.highScore = parseInt(raw, 10) || 0;
+          }
+        } catch (e) {
+          this.state.highScore = 0;
+        }
+        this.updateScoreUI();
+      },
+
+      saveHighScore() {
+        try {
+          localStorage.setItem('vectorparkour_highscore', this.state.highScore.toString());
+        } catch (e) {
+          console.error('Failed to save high score:', e);
+        }
+      },
+
+      updateScoreUI() {
+        if (this.dom.scoreDisplay) {
+          this.dom.scoreDisplay.textContent = 'Skor: ' + this.state.score;
+        }
+        if (this.dom.highScoreDisplay) {
+          this.dom.highScoreDisplay.textContent = 'Terbaik: ' + this.state.highScore;
+        }
+      },
+
+      initGame() {
+        const canvas = this.dom.canvas;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+
+        let animationId = null;
+        let lastTime = 0;
+        let speed = 5;
+        let distance = 0;
+        let frameCount = 0;
+
+        const player = {
+          x: 80,
+          y: 0,
+          width: 36,
+          height: 52,
+          vy: 0,
+          gravity: 0.7,
+          jumpForce: -14,
+          grounded: false,
+          maxJumps: 2,
+          jumpsRemaining: 2,
+          color: '#6366f1'
+        };
+
+        let obstacles = [];
+        let particles = [];
+        let groundY = H - 60;
+        let clouds = [];
+
+        function resetGame() {
+          player.y = groundY - player.height;
+          player.vy = 0;
+          player.grounded = true;
+          player.jumpsRemaining = player.maxJumps;
+          obstacles = [];
+          particles = [];
+          speed = 5;
+          distance = 0;
+          frameCount = 0;
+          App.state.score = 0;
+          App.state.gameOver = false;
+          App.state.gameRunning = true;
+          App.updateScoreUI();
+          if (animationId) cancelAnimationFrame(animationId);
+          loop(0);
+        }
+
+        function spawnObstacle() {
+          const types = ['building', 'house', 'box'];
+          const type = types[Math.floor(Math.random() * types.length)];
+          let width = 40;
+          let height = 50;
+
+          if (type === 'building') {
+            width = 40 + Math.random() * 30;
+            height = 70 + Math.random() * 80;
+          } else if (type === 'house') {
+            width = 60 + Math.random() * 30;
+            height = 50 + Math.random() * 40;
+          } else {
+            width = 30 + Math.random() * 20;
+            height = 35 + Math.random() * 30;
+          }
+
+          obstacles.push({
+            x: W + width,
+            y: groundY - height,
+            width: width,
+            height: height,
+            type: type,
+            passed: false
+          });
+        }
+
+        function spawnCloud() {
+          clouds.push({
+            x: W + 40,
+            y: 20 + Math.random() * 80,
+            width: 50 + Math.random() * 60,
+            speed: 0.4 + Math.random() * 0.8
+          });
+        }
+
+        function createDust(x, y) {
+          for (let i = 0; i < 4; i++) {
+            particles.push({
+              x: x,
+              y: y,
+              vx: -speed * 0.5 + Math.random() * 1.5,
+              vy: -Math.random() * 1.5,
+              life: 1,
+              size: 2 + Math.random() * 3
+            });
+          }
+        }
+
+        function update(dt) {
+          if (!App.state.gameRunning || App.state.gameOver) return;
+
+          frameCount++;
+          distance += speed;
+          App.state.score = Math.floor(distance / 10);
+
+          if (frameCount % 120 === 0 && speed < 12) {
+            speed += 0.15;
+          }
+
+          player.vy += player.gravity;
+          player.y += player.vy;
+
+          if (player.y + player.height >= groundY) {
+            player.y = groundY - player.height;
+            player.vy = 0;
+            player.grounded = true;
+            player.jumpsRemaining = player.maxJumps;
+          } else {
+            player.grounded = false;
+          }
+
+          if (frameCount % 90 === 0 || (obstacles.length === 0 && frameCount % 40 === 0)) {
+            spawnObstacle();
+          }
+
+          if (Math.random() < 0.01) {
+            spawnCloud();
+          }
+
+          obstacles.forEach(function(obs) {
+            obs.x -= speed;
+
+            if (!obs.passed && obs.x + obs.width < player.x) {
+              obs.passed = true;
+            }
+
+            if (
+              player.x < obs.x + obs.width &&
+              player.x + player.width > obs.x &&
+              player.y + player.height > obs.y &&
+              player.y < obs.y + obs.height
+            ) {
+              App.triggerGameOver();
+            }
+          });
+
+          obstacles = obstacles.filter(function(obs) {
+            return obs.x + obs.width > -50;
+          });
+
+          clouds.forEach(function(c) {
+            c.x -= c.speed;
+          });
+          clouds = clouds.filter(function(c) {
+            return c.x + c.width > -20;
+          });
+
+          particles.forEach(function(p) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.04;
+          });
+          particles = particles.filter(function(p) {
+            return p.life > 0;
+          });
+
+          App.updateScoreUI();
+        }
+
+        function draw() {
+          const isDark = App.state.theme === 'dark';
+          const skyTop = isDark ? '#0b0f19' : '#e0f2fe';
+          const skyBottom = isDark ? '#111827' : '#f8fafc';
+          const groundColor = isDark ? '#1f2937' : '#cbd5e1';
+          const groundLine = isDark ? '#374151' : '#94a3b8';
+
+          const grad = ctx.createLinearGradient(0, 0, 0, H);
+          grad.addColorStop(0, skyTop);
+          grad.addColorStop(1, skyBottom);
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, W, H);
+
+          clouds.forEach(function(c) {
+            ctx.fillStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)';
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, c.width * 0.25, 0, Math.PI * 2);
+            ctx.arc(c.x + c.width * 0.25, c.y - c.width * 0.08, c.width * 0.3, 0, Math.PI * 2);
+            ctx.arc(c.x + c.width * 0.55, c.y, c.width * 0.22, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          ctx.fillStyle = groundColor;
+          ctx.fillRect(0, groundY, W, H - groundY);
+          ctx.strokeStyle = groundLine;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, groundY);
+          ctx.lineTo(W, groundY);
+          ctx.stroke();
+
+          obstacles.forEach(function(obs) {
+            if (obs.type === 'building') {
+              ctx.fillStyle = isDark ? '#1e1b4b' : '#e0e7ff';
+              ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+              ctx.strokeStyle = isDark ? '#6366f1' : '#4f46e5';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+              for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < Math.floor(obs.width / 14); col++) {
+                  if (Math.random() > 0.3) {
+                    ctx.fillStyle = isDark ? '#6366f1' : '#4f46e5';
+                    ctx.fillRect(obs.x + 4 + col * 14, obs.y + 6 + row * 22, 8, 10);
+                  }
+                }
+              }
+            } else if (obs.type === 'house') {
+              ctx.fillStyle = isDark ? '#064e3b' : '#d1fae5';
+              ctx.fillRect(obs.x, obs.y + 20, obs.width, obs.height - 20);
+              ctx.beginPath();
+              ctx.moveTo(obs.x - 4, obs.y + 20);
+              ctx.lineTo(obs.x + obs.width / 2, obs.y);
+              ctx.lineTo(obs.x + obs.width + 4, obs.y + 20);
+              ctx.closePath();
+              ctx.fillStyle = isDark ? '#047857' : '#10b981';
+              ctx.fill();
+              ctx.strokeStyle = isDark ? '#34d399' : '#059669';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+              ctx.fillStyle = isDark ? '#fbbf24' : '#f59e0b';
+              ctx.fillRect(obs.x + obs.width * 0.7, obs.y + obs.height * 0.45, 10, 14);
+            } else {
+              ctx.fillStyle = isDark ? '#450a0a' : '#fee2e2';
+              ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+              ctx.strokeStyle = isDark ? '#f87171' : '#ef4444';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+              ctx.beginPath();
+              ctx.moveTo(obs.x, obs.y);
+              ctx.lineTo(obs.x + obs.width, obs.y + obs.height);
+              ctx.moveTo(obs.x + obs.width, obs.y);
+              ctx.lineTo(obs.x, obs.y + obs.height);
+              ctx.stroke();
+            }
+          });
+
+          particles.forEach(function(p) {
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = isDark ? '#cbd5e1' : '#64748b';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          });
+
+          const px = player.x;
+          const py = player.y;
+          const pw = player.width;
+          const ph = player.height;
+
+          ctx.fillStyle = player.color;
+          ctx.beginPath();
+          ctx.moveTo(px + pw * 0.5, py);
+          ctx.lineTo(px + pw, py + ph * 0.4);
+          ctx.lineTo(px + pw * 0.75, py + ph);
+          ctx.lineTo(px + pw * 0.25, py + ph);
+          ctx.lineTo(px, py + ph * 0.4);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          const jumpsLeft = player.jumpsRemaining;
+          if (jumpsLeft > 0) {
+            const dotY = py - 12;
+            ctx.fillStyle = jumpsLeft === 2 ? '#6366f1' : '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(px + pw * 0.5, dotY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            if (jumpsLeft >= 2) {
+              ctx.beginPath();
+              ctx.arc(px + pw * 0.5 + 10, dotY - 4, 4, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          if (App.state.gameOver) {
+            ctx.fillStyle = 'rgba(15,23,42,0.65)';
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '800 36px Plus Jakarta Sans, system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAME OVER', W / 2, H / 2 - 20);
+
+            ctx.font = '600 18px Plus Jakarta Sans, system-ui, sans-serif';
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillText('Skor: ' + App.state.score + '  |  Terbaik: ' + App.state.highScore, W / 2, H / 2 + 20);
+
+            ctx.font = '700 16px Plus Jakarta Sans, system-ui, sans-serif';
+            ctx.fillStyle = '#6366f1';
+            const blink = Math.floor(Date.now() / 500) % 2 === 0;
+            if (blink) {
+              ctx.fillText('Tekan Spasi untuk main lagi', W / 2, H / 2 + 58);
+            }
+            ctx.textAlign = 'start';
+          }
+        }
+
+        function loop(timestamp) {
+          const dt = timestamp - lastTime;
+          lastTime = timestamp;
+
+          update(dt);
+          draw();
+
+          if (App.state.gameRunning) {
+            animationId = requestAnimationFrame(loop);
+          }
+        }
+
+        function jump() {
+          if (App.state.gameOver) {
+            resetGame();
+            return;
+          }
+          if (!App.state.gameRunning) {
+            resetGame();
+            return;
+          }
+          if (player.jumpsRemaining > 0) {
+            const isSecondJump = player.jumpsRemaining === 1 && !player.grounded;
+            player.vy = isSecondJump ? player.jumpForce * 0.85 : player.jumpForce;
+            player.grounded = false;
+            player.jumpsRemaining--;
+            createDust(player.x + player.width / 2, player.y + player.height);
+          }
+        }
+
+        function fastFall() {
+          if (!App.state.gameOver && App.state.gameRunning && !player.grounded) {
+            player.vy += 1.2;
+          }
+        }
+
+        App.triggerGameOver = function() {
+          if (App.state.gameOver) return;
+          App.state.gameOver = true;
+          App.state.gameRunning = false;
+          if (App.state.score > App.state.highScore) {
+            App.state.highScore = App.state.score;
+            App.saveHighScore();
+            App.showToast('Skor baru! ' + App.state.highScore, 'success');
+          }
+          App.updateScoreUI();
+          App.showToast('Game Over. Tekan Spasi untuk ulang.', 'warning');
+        };
+
+        App.startGame = resetGame;
+
+        App.jump = jump;
+        App.fastFall = fastFall;
+
+        resetGame();
+      },
+
+      bindEvents() {
+        var self = this;
+
+        this.dom.themeToggle.addEventListener('click', function() {
+          self.toggleTheme();
+        });
+
+        window.addEventListener('keydown', function(e) {
+          if (e.code === 'Space' || e.code === 'ArrowUp') {
+            e.preventDefault();
+            if (typeof App.jump === 'function') {
+              App.jump();
+            }
+          }
+          if (e.code === 'ArrowDown') {
+            e.preventDefault();
+            if (typeof App.fastFall === 'function') {
+              App.fastFall();
+            }
+          }
+        });
+
+        const canvas = this.dom.canvas;
+        canvas.addEventListener('pointerdown', function(e) {
+          e.preventDefault();
+          const rect = canvas.getBoundingClientRect();
+          const touchY = e.clientY - rect.top;
+          const canvasHeight = rect.height;
+          if (touchY < canvasHeight * 0.4) {
+            if (typeof App.jump === 'function') {
+              App.jump();
+            }
+          } else {
+            if (typeof App.fastFall === 'function') {
+              App.fastFall();
+            }
+          }
+        });
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      App.init();
+    });
+  </script>
+</body>
+</html>

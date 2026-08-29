@@ -486,12 +486,20 @@
         let particles = [];
         let groundY = H - 60;
         let clouds = [];
+        let envTheme = 'normal';
+        let snowflakes = [];
+        let leaves = [];
+        const playerImage = new Image();
+        playerImage.src = 'poyoyoi.png';
 
         function resetGame() {
           player.y = groundY - player.height;
           player.vy = 0;
           player.grounded = true;
           player.jumpsRemaining = player.maxJumps;
+          envTheme = 'normal';
+          snowflakes = [];
+          leaves = [];
           obstacles = [];
           particles = [];
           speed = 5;
@@ -539,6 +547,11 @@
             width: 50 + Math.random() * 60,
             speed: 0.4 + Math.random() * 0.8
           });
+        }
+
+        function getEnvTheme(score) {
+          const index = Math.floor(score / 3000) % 3;
+          return ['normal', 'snow', 'autumn'][index];
         }
 
         function createDust(x, y) {
@@ -623,14 +636,80 @@
           });
 
           App.updateScoreUI();
+
+          const newEnvTheme = getEnvTheme(App.state.score);
+          if (newEnvTheme !== envTheme) {
+            envTheme = newEnvTheme;
+            snowflakes = [];
+            leaves = [];
+          }
+
+          if (envTheme === 'snow' && Math.random() < 0.15) {
+            snowflakes.push({
+              x: Math.random() * W,
+              y: -10,
+              speed: 1 + Math.random() * 2,
+              size: 2 + Math.random() * 3,
+              wobble: Math.random() * Math.PI * 2
+            });
+          }
+
+          if (envTheme === 'autumn' && Math.random() < 0.03) {
+            leaves.push({
+              x: W + 10,
+              y: Math.random() * (groundY - 40),
+              speed: 1 + Math.random() * 1.5,
+              wobble: Math.random() * Math.PI * 2,
+              size: 4 + Math.random() * 4,
+              rotation: Math.random() * Math.PI * 2
+            });
+          }
+
+          snowflakes.forEach(function(s) {
+            s.y += s.speed;
+            s.wobble += 0.05;
+            s.x += Math.sin(s.wobble) * 0.5;
+          });
+          snowflakes = snowflakes.filter(function(s) { return s.y < H; });
+
+          leaves.forEach(function(l) {
+            l.x -= l.speed;
+            l.wobble += 0.03;
+            l.y += Math.sin(l.wobble) * 0.8;
+            l.rotation += 0.02;
+          });
+          leaves = leaves.filter(function(l) { return l.x > -20; });
         }
 
         function draw() {
           const isDark = App.state.theme === 'dark';
-          const skyTop = isDark ? '#0b0f19' : '#e0f2fe';
-          const skyBottom = isDark ? '#111827' : '#f8fafc';
-          const groundColor = isDark ? '#1f2937' : '#cbd5e1';
-          const groundLine = isDark ? '#374151' : '#94a3b8';
+          let skyTop, skyBottom, groundColor, groundLine, particleColor, obsLight, obsStroke;
+
+          if (envTheme === 'snow') {
+            skyTop = isDark ? '#0f172a' : '#e0f7fa';
+            skyBottom = isDark ? '#1e293b' : '#ffffff';
+            groundColor = isDark ? '#263238' : '#b2ebf2';
+            groundLine = isDark ? '#374151' : '#80deea';
+            particleColor = '#ffffff';
+            obsLight = isDark ? '#263238' : '#ffffff';
+            obsStroke = isDark ? '#80deea' : '#4dd0e1';
+          } else if (envTheme === 'autumn') {
+            skyTop = isDark ? '#1a0f0a' : '#fff3e0';
+            skyBottom = isDark ? '#2d1f15' : '#ffe0b2';
+            groundColor = isDark ? '#3e2723' : '#d7ccc8';
+            groundLine = isDark ? '#5d4037' : '#a1887f';
+            particleColor = '#ff9800';
+            obsLight = isDark ? '#3e2723' : '#ffcc80';
+            obsStroke = isDark ? '#ff9800' : '#ef6c00';
+          } else {
+            skyTop = isDark ? '#0b0f19' : '#e0f2fe';
+            skyBottom = isDark ? '#111827' : '#f8fafc';
+            groundColor = isDark ? '#1f2937' : '#cbd5e1';
+            groundLine = isDark ? '#374151' : '#94a3b8';
+            particleColor = isDark ? '#cbd5e1' : '#64748b';
+            obsLight = isDark ? '#1e1b4b' : '#e0e7ff';
+            obsStroke = isDark ? '#6366f1' : '#4f46e5';
+          }
 
           const grad = ctx.createLinearGradient(0, 0, 0, H);
           grad.addColorStop(0, skyTop);
@@ -638,8 +717,30 @@
           ctx.fillStyle = grad;
           ctx.fillRect(0, 0, W, H);
 
+          if (envTheme === 'snow') {
+            snowflakes.forEach(function(s) {
+              ctx.fillStyle = 'rgba(255,255,255,0.9)';
+              ctx.beginPath();
+              ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+              ctx.fill();
+            });
+          }
+
+          if (envTheme === 'autumn') {
+            leaves.forEach(function(l) {
+              ctx.save();
+              ctx.translate(l.x, l.y);
+              ctx.rotate(l.rotation);
+              ctx.fillStyle = '#ff9800';
+              ctx.beginPath();
+              ctx.ellipse(0, 0, l.size, l.size * 0.6, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            });
+          }
+
           clouds.forEach(function(c) {
-            ctx.fillStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)';
+            ctx.fillStyle = envTheme === 'snow' ? 'rgba(255,255,255,0.85)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)');
             ctx.beginPath();
             ctx.arc(c.x, c.y, c.width * 0.25, 0, Math.PI * 2);
             ctx.arc(c.x + c.width * 0.25, c.y - c.width * 0.08, c.width * 0.3, 0, Math.PI * 2);
@@ -658,38 +759,38 @@
 
           obstacles.forEach(function(obs) {
             if (obs.type === 'building') {
-              ctx.fillStyle = isDark ? '#1e1b4b' : '#e0e7ff';
+              ctx.fillStyle = obsLight;
               ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-              ctx.strokeStyle = isDark ? '#6366f1' : '#4f46e5';
+              ctx.strokeStyle = obsStroke;
               ctx.lineWidth = 2;
               ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
               for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < Math.floor(obs.width / 14); col++) {
                   if (Math.random() > 0.3) {
-                    ctx.fillStyle = isDark ? '#6366f1' : '#4f46e5';
+                    ctx.fillStyle = obsStroke;
                     ctx.fillRect(obs.x + 4 + col * 14, obs.y + 6 + row * 22, 8, 10);
                   }
                 }
               }
             } else if (obs.type === 'house') {
-              ctx.fillStyle = isDark ? '#064e3b' : '#d1fae5';
+              ctx.fillStyle = obsLight;
               ctx.fillRect(obs.x, obs.y + 20, obs.width, obs.height - 20);
               ctx.beginPath();
               ctx.moveTo(obs.x - 4, obs.y + 20);
               ctx.lineTo(obs.x + obs.width / 2, obs.y);
               ctx.lineTo(obs.x + obs.width + 4, obs.y + 20);
               ctx.closePath();
-              ctx.fillStyle = isDark ? '#047857' : '#10b981';
+              ctx.fillStyle = obsStroke;
               ctx.fill();
-              ctx.strokeStyle = isDark ? '#34d399' : '#059669';
+              ctx.strokeStyle = obsStroke;
               ctx.lineWidth = 2;
               ctx.stroke();
-              ctx.fillStyle = isDark ? '#fbbf24' : '#f59e0b';
+              ctx.fillStyle = '#fbbf24';
               ctx.fillRect(obs.x + obs.width * 0.7, obs.y + obs.height * 0.45, 10, 14);
             } else {
-              ctx.fillStyle = isDark ? '#450a0a' : '#fee2e2';
+              ctx.fillStyle = obsLight;
               ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-              ctx.strokeStyle = isDark ? '#f87171' : '#ef4444';
+              ctx.strokeStyle = obsStroke;
               ctx.lineWidth = 2;
               ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
               ctx.beginPath();
@@ -703,7 +804,7 @@
 
           particles.forEach(function(p) {
             ctx.globalAlpha = p.life;
-            ctx.fillStyle = isDark ? '#cbd5e1' : '#64748b';
+            ctx.fillStyle = particleColor;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
             ctx.fill();
@@ -715,19 +816,22 @@
           const pw = player.width;
           const ph = player.height;
 
-          ctx.fillStyle = player.color;
-          ctx.beginPath();
-          ctx.moveTo(px + pw * 0.5, py);
-          ctx.lineTo(px + pw, py + ph * 0.4);
-          ctx.lineTo(px + pw * 0.75, py + ph);
-          ctx.lineTo(px + pw * 0.25, py + ph);
-          ctx.lineTo(px, py + ph * 0.4);
-          ctx.closePath();
-          ctx.fill();
-
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2;
-          ctx.stroke();
+          if (playerImage.complete && playerImage.naturalWidth) {
+            ctx.drawImage(playerImage, px, py, pw, ph);
+          } else {
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.moveTo(px + pw * 0.5, py);
+            ctx.lineTo(px + pw, py + ph * 0.4);
+            ctx.lineTo(px + pw * 0.75, py + ph);
+            ctx.lineTo(px + pw * 0.25, py + ph);
+            ctx.lineTo(px, py + ph * 0.4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
 
           const jumpsLeft = player.jumpsRemaining;
           if (jumpsLeft > 0) {
